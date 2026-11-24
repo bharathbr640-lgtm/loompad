@@ -1,0 +1,8 @@
+notion.db
+notion.db-journal
+notion.db-wal
+notion.db-shm
+target/
+__pycache__/
+*.pyc
+.DS_Store

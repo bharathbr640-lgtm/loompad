@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notion</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23ffffff' stroke='%23191919' stroke-width='6'/%3E%3Ctext x='50' y='69' font-family='Georgia,serif' font-size='58' font-weight='700' text-anchor='middle' fill='%23191919'%3EN%3C/text%3E%3C/svg%3E" />
+  <script>
+    (function() {
+      var t = localStorage.getItem("notion_theme") || "light";
+      if (t === "system") {
+        t = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- AUTH VIEW -->
+  <div id="auth-view" class="auth-view hidden">
+    <header class="auth-topbar">
+      <div class="auth-brand">
+        <span class="notion-logo-mark">N</span>
+        <span>Notion</span>
+      </div>
+    </header>
+    <main class="auth-main">
+      <div class="auth-card">
+        <h1 id="auth-title" class="auth-title">Log in</h1>
+        <p id="auth-subtitle" class="auth-subtitle">Enter your account details to access your workspace.</p>
+
+        <form id="auth-form" class="auth-form" autocomplete="on">
+          <div id="auth-name-group" class="form-group hidden">
+            <label for="auth-name">Full name</label>
+            <input id="auth-name" type="text" placeholder="Enter your name..." autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="auth-email">Email</label>
+            <input id="auth-email" type="email" placeholder="Enter your email address..." required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="auth-password">Password</label>
+            <input id="auth-password" type="password" placeholder="Enter your password..." required minlength="6" autocomplete="current-password" />
+          </div>
+          <div id="auth-error" class="auth-error hidden"></div>
+          <button id="auth-submit" type="submit" class="btn-primary auth-submit-btn">Continue</button>
+        </form>
+
+        <div class="auth-divider"><span>or</span></div>
+        <div class="auth-switch">
+          <span id="auth-switch-text">Don't have an account?</span>
+          <button id="auth-switch-btn" type="button" class="link-btn">Create an account</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MAIN NOTION APP -->
+  <div id="app-view" class="app-shell hidden">
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-top">
+        <button id="workspace-switcher-btn" class="workspace-switcher" title="Switch workspace or account">
+          <span id="ws-avatar" class="ws-avatar">N</span>
+          <span id="ws-name" class="ws-name">Workspace</span>
+          <span class="ws-chevron" data-icon="chevronDown"></span>
+        </button>
+        <div class="sidebar-top-actions">
+          <button id="sidebar-collapse-btn" class="icon-btn" title="Close sidebar (Cmd+\)">
+            <span data-icon="chevronsLeft"></span>
+          </button>
+          <button id="sidebar-quick-new-btn" class="icon-btn" title="New page">
+            <span data-icon="editSquare"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Primary Sidebar Actions -->
+      <div class="sidebar-nav">
+        <button id="nav-search-btn" class="sidebar-item">
+          <span class="sidebar-item-icon" data-icon="search"></span>
+          <span class="sidebar-item-label">Search</span>
+          <span class="sidebar-shortcut">⌘K</span>
+        </button>
+        <button id="nav-home-btn" class="sidebar-item">
+          <span class="sidebar-item-icon" data-icon="home"></span>
+          <span class="sidebar-item-label">Home</span>
+        </button>
+        <button id="nav-new-page-btn" class="sidebar-item">
+          <span class="sidebar-item-icon" data-icon="plusCircle"></span>
+          <span class="sidebar-item-label">New page</span>
+        </button>
+        <button id="nav-settings-btn" class="sidebar-item">
+          <span class="sidebar-item-icon" data-icon="settings"></span>
+          <span class="sidebar-item-label">Settings</span>
+        </button>
+      </div>
+
+      <!-- Scrollable Workspace Sections -->
+      <div class="sidebar-scroll">
+        <div id="favorites-section" class="sidebar-section hidden">
+          <div class="sidebar-section-header">
+            <span>Favorites</span>
+          </div>
+          <div id="favorites-list" class="page-tree"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-header" id="private-root-dropzone" title="Drop a page here to move to top level">
+            <span>Private</span>
+            <button id="section-add-page-btn" class="section-add-btn" title="Add a page">
+              <span data-icon="plus"></span>
+            </button>
+          </div>
+          <div id="pages-tree" class="page-tree"></div>
+          <button id="add-page-inline-btn" class="sidebar-item add-page-item">
+            <span class="sidebar-item-icon" data-icon="plus"></span>
+            <span class="sidebar-item-label">Add a page</span>
+          </button>
+        </div>
+
+        <!-- Separate Knowledge Graph & Wiki Section -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-header">
+            <span>Knowledge Graph</span>
+          </div>
+          <button id="nav-graph-btn" class="sidebar-item">
+            <span class="sidebar-item-icon" data-icon="graph"></span>
+            <span class="sidebar-item-label">Graph View</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button id="nav-import-md-btn" class="sidebar-item">
+          <span class="sidebar-item-icon" data-icon="upload"></span>
+          <span class="sidebar-item-label">Import Markdown</span>
+        </button>
+        <input id="import-md-input" type="file" accept=".md,.txt,text/markdown" class="hidden" />
+        <button id="nav-trash-btn" class="sidebar-item">
+          <span class="sidebar-item-icon" data-icon="trash"></span>
+          <span class="sidebar-item-label">Trash</span>
+        </button>
+        <button id="sidebar-profile-btn" class="sidebar-profile-pill" title="Profile & Settings">
+          <span id="sidebar-user-avatar" class="user-avatar-sm">B</span>
+          <div class="sidebar-profile-meta">
+            <span id="sidebar-user-name" class="sidebar-user-name">User</span>
+            <span id="sidebar-user-email" class="sidebar-user-email">user@example.com</span>
+          </div>
+        </button>
+      </div>
+
+      <div id="sidebar-resizer" class="sidebar-resizer"></div>
+    </aside>
+
+    <!-- MAIN WORKSPACE AREA -->
+    <main class="main-area">
+      <!-- Desktop Tab Bar -->
+      <div id="desktop-tabbar" class="desktop-tabbar">
+        <div class="tabbar-nav-controls">
+          <button id="sidebar-open-btn" class="icon-btn-sm hidden" title="Open sidebar (Cmd+\)">
+            <span data-icon="menu"></span>
+          </button>
+          <button id="nav-back-btn" class="icon-btn-sm" title="Back" disabled>←</button>
+          <button id="nav-forward-btn" class="icon-btn-sm" title="Forward" disabled>→</button>
+        </div>
+        <div id="tabs-strip" class="tabs-strip"></div>
+        <button id="new-tab-btn" class="icon-btn-sm tab-add-btn" title="New tab">
+          <span data-icon="plus"></span>
+        </button>
+      </div>
+
+      <!-- Page Topbar -->
+      <header id="editor-topbar" class="editor-topbar">
+        <div class="topbar-left">
+          <nav id="breadcrumbs" class="breadcrumbs"></nav>
+          <span id="locked-pill" class="locked-pill hidden">Locked</span>
+        </div>
+        <div class="topbar-right">
+          <span id="save-status" class="save-status">Saved</span>
+          <button id="topbar-share-btn" class="topbar-share-btn" title="Share via Gmail">Share</button>
+          <button id="topbar-comments-btn" class="icon-btn" title="Page comments">
+            <span data-icon="comment"></span>
+          </button>
+          <button id="topbar-favorite-btn" class="icon-btn" title="Add to Favorites">
+            <span data-icon="star"></span>
+          </button>
+          <button id="topbar-more-btn" class="icon-btn" title="Page options">
+            <span data-icon="moreHorizontal"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Trashed Banner -->
+      <div id="trashed-banner" class="trashed-banner hidden">
+        <span>This page is in Trash.</span>
+        <div class="trashed-banner-actions">
+          <button id="restore-current-page-btn" class="btn-outline-sm">Restore page</button>
+          <button id="delete-current-page-btn" class="btn-danger-sm">Delete permanently</button>
+        </div>
+      </div>
+
+      <!-- HOME VIEW -->
+      <div id="home-view" class="home-view hidden">
+        <div class="home-container">
+          <h1 id="home-greeting" class="home-greeting">Good evening</h1>
+          <section class="home-section">
+            <div class="home-section-title">Recently visited</div>
+            <div id="home-recent-grid" class="home-cards-grid"></div>
+          </section>
+          <section class="home-section">
+            <div class="home-section-title">Open tasks across workspace</div>
+            <div id="home-todos-list" class="home-todos-list"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- GRAPH VIEW SECTION -->
+      <div id="graph-view" class="graph-view hidden">
+        <div class="graph-toolbar">
+          <div class="graph-toolbar-left">
+            <strong>Graph View</strong>
+            <span id="graph-stats" class="graph-stats"></span>
+          </div>
+          <div class="graph-toolbar-right">
+            <input id="graph-search-input" type="text" class="graph-search-input" placeholder="Highlight pages..." />
+            <label class="graph-toggle-label">
+              <input id="graph-toggle-wiki" type="checkbox" checked /> Wiki links
+            </label>
+            <label class="graph-toggle-label">
+              <input id="graph-toggle-hier" type="checkbox" checked /> Nested pages
+            </label>
+            <button id="graph-reset-btn" class="btn-outline-sm">Reset layout</button>
+          </div>
+        </div>
+        <div class="graph-canvas-wrap">
+          <canvas id="graph-canvas"></canvas>
+          <div class="graph-legend">
+            <span><i class="legend-line wiki"></i> [[Wiki link]]</span>
+            <span><i class="legend-line hier"></i> Nested sub-page</span>
+            <span>Click any node to open page · Drag to reposition · Scroll to zoom</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state-inner">
+          <div class="empty-state-icon">📄</div>
+          <h2>No page selected</h2>
+          <p>Select a page from your workspace or create a new one to start writing.</p>
+          <button id="empty-new-page-btn" class="btn-primary">Create a new page</button>
+        </div>
+      </div>
+
+      <!-- Page Scroller -->
+      <div id="page-scroller" class="page-scroller hidden">
+        <div id="page-cover" class="page-cover hidden">
+          <div class="page-cover-controls">
+            <button id="change-cover-btn" class="cover-btn">Change cover</button>
+            <button id="remove-cover-btn" class="cover-btn">Remove</button>
+          </div>
+        </div>
+
+        <div id="page-container" class="page-container">
+          <div class="page-header-controls">
+            <button id="add-icon-btn" class="subtle-action-btn">
+              <span data-icon="smile"></span> Add icon
+            </button>
+            <button id="add-cover-btn" class="subtle-action-btn">
+              <span data-icon="image"></span> Add cover
+            </button>
+            <button id="add-comment-btn" class="subtle-action-btn">
+              <span data-icon="comment"></span> Add comment
+            </button>
+          </div>
+
+          <div class="page-title-row">
+            <button id="page-icon-btn" class="page-icon-display hidden" title="Change icon"></button>
+            <h1 id="page-title" class="page-title" contenteditable="true" data-placeholder="Untitled"></h1>
+          </div>
+
+          <!-- Page Tags / Properties Bar -->
+          <div id="page-tags-bar" class="page-tags-bar">
+            <div id="tags-list" class="tags-list"></div>
+            <input id="tag-add-input" class="tag-add-input" type="text" placeholder="+ Add tag..." />
+          </div>
+
+          <!-- Backlinks Bar ([[Wiki Links]] pointing to this page) -->
+          <div id="backlinks-bar" class="backlinks-bar hidden">
+            <span class="backlinks-label">Linked from:</span>
+            <div id="backlinks-list" class="backlinks-list"></div>
+          </div>
+
+          <!-- Page Comments Panel -->
+          <div id="comments-panel" class="comments-panel hidden">
+            <div class="comments-header">
+              <strong>Comments</strong>
+              <button id="comments-close-btn" class="icon-btn-sm">✕</button>
+            </div>
+            <div id="comments-list" class="comments-list"></div>
+            <form id="comment-form" class="comment-form">
+              <input id="comment-input" type="text" class="text-input" placeholder="Add a comment..." />
+              <button type="submit" class="btn-primary-sm">Post</button>
+            </form>
+          </div>
+
+          <!-- Local Starter Templates -->
+          <div id="template-bar" class="template-bar hidden">
+            <span class="template-bar-label">Start with a template:</span>
+            <button class="template-pill" data-template="meeting">📝 Meeting Notes</button>
+            <button class="template-pill" data-template="project">📊 Project Database</button>
+            <button class="template-pill" data-template="todo">✅ Weekly To-Do</button>
+            <button class="template-pill" data-template="reading">📚 Reading List</button>
+          </div>
+
+          <div id="subpages-bar" class="subpages-bar hidden"></div>
+          <div id="blocks-container" class="blocks-container"></div>
+          <div id="editor-bottom-pad" class="editor-bottom-pad"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- FLOATING INLINE TEXT FORMATTING TOOLBAR -->
+  <div id="format-toolbar" class="format-toolbar hidden">
+    <button type="button" class="fmt-btn" data-cmd="bold" title="Bold (Cmd+B)"><strong>B</strong></button>
+    <button type="button" class="fmt-btn" data-cmd="italic" title="Italic (Cmd+I)"><em>I</em></button>
+    <button type="button" class="fmt-btn" data-cmd="underline" title="Underline (Cmd+U)"><u>U</u></button>
+    <button type="button" class="fmt-btn" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+    <button type="button" class="fmt-btn" data-cmd="code" title="Inline code">&lt;/&gt;</button>
+    <button type="button" class="fmt-btn" data-cmd="highlight" title="Highlight">H</button>
+    <button type="button" class="fmt-btn" data-cmd="color" data-val="#e03e3e" title="Red text" style="color:#e03e3e;font-weight:700;">A</button>
+    <button type="button" class="fmt-btn" data-cmd="color" data-val="#2383e2" title="Blue text" style="color:#2383e2;font-weight:700;">A</button>
+    <button type="button" class="fmt-btn" data-cmd="color" data-val="#0f7b6c" title="Green text" style="color:#0f7b6c;font-weight:700;">A</button>
+  </div>
+
+  <!-- WIKI LINK AUTOCOMPLETE MENU (triggered by [[ ) -->
+  <div id="wiki-menu" class="slash-menu hidden">
+    <div class="slash-menu-header">Link to page ([[Wiki Link]])</div>
+    <div id="wiki-menu-list" class="slash-menu-list"></div>
+  </div>
+
+  <!-- WORKSPACE SWITCHER POPOVER -->
+  <div id="workspace-popover" class="popover hidden">
+    <div class="popover-account-header">
+      <span id="pop-account-email" class="popover-email"></span>
+    </div>
+    <div id="workspace-list" class="popover-list"></div>
+    <div class="popover-divider"></div>
+    <button id="pop-create-workspace-btn" class="popover-item">
+      <span data-icon="plus"></span> Create new workspace
+    </button>
+    <button id="pop-settings-btn" class="popover-item">
+      <span data-icon="settings"></span> Settings &amp; profile
+    </button>
+    <button id="pop-logout-btn" class="popover-item danger-text">
+      <span data-icon="logOut"></span> Log out
+    </button>
+  </div>
+
+  <!-- SEARCH MODAL (Cmd+K) -->
+  <div id="search-modal" class="modal-backdrop hidden">
+    <div class="search-dialog">
+      <div class="search-input-row">
+        <span class="search-input-icon" data-icon="search"></span>
+        <input id="search-input" type="text" placeholder="Search pages and content in your workspace..." autocomplete="off" />
+        <button id="search-close-btn" class="icon-btn-sm" title="Close (Esc)">✕</button>
+      </div>
+      <div class="search-filter-bar">
+        <button id="sf-title-only" class="filter-chip" type="button">Title only</button>
+        <button id="sf-favorites-only" class="filter-chip" type="button">Favorites only</button>
+      </div>
+      <div id="search-results" class="search-results"></div>
+      <div class="search-footer">
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+        <span><kbd>↵</kbd> Open</span>
+        <span><kbd>⌘↵</kbd> Open in new tab</span>
+        <span><kbd>Esc</kbd> Close</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS & PROFILE MODAL -->
+  <div id="settings-modal" class="modal-backdrop hidden">
+    <div class="settings-dialog">
+      <aside class="settings-sidebar">
+        <div class="settings-sidebar-group">
+          <div class="settings-group-title">Account</div>
+          <button class="settings-tab active" data-tab="profile">
+            <span id="settings-tab-avatar" class="user-avatar-xs">B</span>
+            <span>My account</span>
+          </button>
+          <button class="settings-tab" data-tab="preferences">
+            <span data-icon="sliders"></span>
+            <span>My settings</span>
+          </button>
+        </div>
+        <div class="settings-sidebar-group">
+          <div class="settings-group-title">Workspace</div>
+          <button class="settings-tab" data-tab="workspace">
+            <span data-icon="settings"></span>
+            <span>Workspace settings</span>
+          </button>
+          <button class="settings-tab" data-tab="storage">
+            <span data-icon="fileText"></span>
+            <span>Local SQLite</span>
+          </button>
+        </div>
+      </aside>
+
+      <section class="settings-content">
+        <button id="settings-close-btn" class="settings-close-btn" title="Close">✕</button>
+
+        <div id="tab-profile" class="settings-pane">
+          <h2 class="settings-heading">My profile</h2>
+          <div class="profile-header-row">
+            <div id="settings-avatar-preview" class="user-avatar-lg">B</div>
+            <div class="profile-header-fields">
+              <label class="field-label" for="settings-name-input">Preferred name</label>
+              <input id="settings-name-input" type="text" class="text-input" />
+              <div class="avatar-color-picker" id="avatar-color-picker"></div>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Email</div>
+              <input id="settings-email-input" type="email" class="text-input" />
+            </div>
+            <button id="save-profile-btn" class="btn-primary-sm">Save profile</button>
+          </div>
+          <div id="profile-feedback" class="settings-feedback hidden"></div>
+
+          <h2 class="settings-heading mt-24">Account security &amp; authentication</h2>
+          <form id="change-password-form" class="password-form">
+            <div class="password-grid">
+              <div>
+                <label class="field-label" for="current-password-input">Current password</label>
+                <input id="current-password-input" type="password" class="text-input" required />
+              </div>
+              <div>
+                <label class="field-label" for="new-password-input">New password</label>
+                <input id="new-password-input" type="password" class="text-input" required minlength="6" />
+              </div>
+            </div>
+            <div class="settings-row-inline">
+              <button type="submit" class="btn-outline-sm">Change password</button>
+              <span id="password-feedback" class="settings-feedback hidden"></span>
+            </div>
+          </form>
+
+          <div class="settings-row mt-20">
+            <div>
+              <div class="settings-label">Sign out</div>
+              <div class="settings-desc">Log out of your current session or all active sessions.</div>
+            </div>
+            <div class="btn-group">
+              <button id="settings-logout-btn" class="btn-outline-sm">Log out</button>
+              <button id="settings-logout-all-btn" class="btn-danger-sm">Log out all devices</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-preferences" class="settings-pane hidden">
+          <h2 class="settings-heading">My settings</h2>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Appearance</div>
+              <div class="settings-desc">Customize how Notion looks on your device.</div>
+            </div>
+            <select id="theme-select" class="select-input" style="width: 140px;">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="system">Use system</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="tab-workspace" class="settings-pane hidden">
+          <h2 class="settings-heading">Workspace settings</h2>
+          <div class="settings-row">
+            <div class="ws-settings-fields">
+              <label class="field-label" for="settings-ws-name">Workspace name</label>
+              <input id="settings-ws-name" type="text" class="text-input" />
+            </div>
+            <div class="ws-icon-field">
+              <label class="field-label" for="settings-ws-icon">Icon</label>
+              <input id="settings-ws-icon" type="text" class="text-input icon-input" maxlength="2" />
+            </div>
+          </div>
+          <div class="settings-row-inline mt-12">
+            <button id="save-workspace-btn" class="btn-primary-sm">Update workspace</button>
+            <span id="workspace-feedback" class="settings-feedback hidden"></span>
+          </div>
+          <h2 class="settings-heading mt-24" style="color:var(--danger);">Danger zone</h2>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Delete this workspace</div>
+              <div class="settings-desc">Permanently delete this workspace and all pages inside it.</div>
+            </div>
+            <button id="delete-workspace-btn" class="btn-danger-sm">Delete workspace</button>
+          </div>
+        </div>
+
+        <div id="tab-storage" class="settings-pane hidden">
+          <h2 class="settings-heading">Local SQLite storage</h2>
+          <p class="settings-desc" style="margin-bottom: 14px;">All pages, blocks, comments, and accounts are stored locally in SQLite with zero external integrations.</p>
+          <div id="sqlite-stats-grid" class="sqlite-stats-grid"></div>
+          <div class="settings-row mt-20">
+            <div>
+              <div class="settings-label">Export workspace backup</div>
+              <div class="settings-desc">Download all pages and blocks in the current workspace as JSON.</div>
+            </div>
+            <button id="export-ws-json-btn" class="btn-outline-sm">Export JSON</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- TRASH POPOVER -->
+  <div id="trash-popover" class="popover trash-popover hidden">
+    <div class="trash-header">
+      <input id="trash-search-input" type="text" placeholder="Search pages in Trash..." />
+    </div>
+    <div id="trash-list" class="trash-list"></div>
+  </div>
+
+  <!-- PAGE CONTEXT MENU / OPTIONS POPOVER -->
+  <div id="page-menu-popover" class="popover hidden">
+    <div class="font-picker-row">
+      <button class="font-choice" data-font="sans">
+        <span class="font-sample font-sans">Ag</span>
+        <span>Default</span>
+      </button>
+      <button class="font-choice" data-font="serif">
+        <span class="font-sample font-serif">Ag</span>
+        <span>Serif</span>
+      </button>
+      <button class="font-choice" data-font="mono">
+        <span class="font-sample font-mono">Ag</span>
+        <span>Mono</span>
+      </button>
+    </div>
+    <div class="popover-divider"></div>
+    <button id="pm-favorite" class="popover-item"><span data-icon="star"></span> <span id="pm-fav-label">Add to Favorites</span></button>
+    <button id="pm-duplicate" class="popover-item"><span data-icon="copy"></span> Duplicate</button>
+    <button id="pm-add-subpage" class="popover-item"><span data-icon="plus"></span> Add sub-page</button>
+    <button id="pm-export-md" class="popover-item"><span data-icon="fileText"></span> Export Markdown (.md)</button>
+    <div class="popover-divider"></div>
+    <button id="pm-full-width" class="popover-item toggle-item">
+      <span>Full width</span>
+      <span id="pm-full-width-indicator" class="toggle-pill"></span>
+    </button>
+    <button id="pm-small-text" class="popover-item toggle-item">
+      <span>Small text</span>
+      <span id="pm-small-text-indicator" class="toggle-pill"></span>
+    </button>
+    <button id="pm-lock-page" class="popover-item toggle-item">
+      <span>Lock page</span>
+      <span id="pm-lock-indicator" class="toggle-pill"></span>
+    </button>
+    <div class="popover-divider"></div>
+    <div id="pm-word-count" class="popover-meta-line">0 words</div>
+    <button id="pm-delete" class="popover-item danger-text"><span data-icon="trash"></span> Move to Trash</button>
+  </div>
+
+  <!-- EMOJI PICKER POPOVER -->
+  <div id="emoji-popover" class="popover emoji-popover hidden">
+    <div class="emoji-header">
+      <span>Choose an icon</span>
+      <button id="emoji-remove-btn" class="link-btn-sm">Remove</button>
+    </div>
+    <div id="emoji-grid" class="emoji-grid"></div>
+  </div>
+
+  <!-- COVER PICKER POPOVER -->
+  <div id="cover-popover" class="popover cover-popover hidden">
+    <div class="emoji-header">
+      <span>Choose a cover</span>
+      <button id="cover-remove-btn" class="link-btn-sm">Remove</button>
+    </div>
+    <div id="cover-grid" class="cover-grid"></div>
+  </div>
+
+  <!-- SLASH COMMAND MENU -->
+  <div id="slash-menu" class="slash-menu hidden">
+    <div class="slash-menu-header">Blocks &amp; Databases</div>
+    <div id="slash-menu-list" class="slash-menu-list"></div>
+  </div>
+
+  <!-- BLOCK ACTIONS MENU -->
+  <div id="block-menu" class="popover hidden">
+    <button id="bm-duplicate" class="popover-item"><span data-icon="copy"></span> Duplicate</button>
+    <button id="bm-move-up" class="popover-item"><span data-icon="arrowUp"></span> Move up</button>
+    <button id="bm-move-down" class="popover-item"><span data-icon="arrowDown"></span> Move down</button>
+    <div class="popover-divider"></div>
+    <button id="bm-delete" class="popover-item danger-text"><span data-icon="trash"></span> Delete</button>
+  </div>
+
+  <!-- SHARE VIA GMAIL POPOVER -->
+  <div id="share-popover" class="popover share-popover hidden">
+    <div class="share-header">
+      <strong>Share via Gmail</strong>
+      <div class="share-scope-tabs">
+        <button type="button" class="share-scope-btn active" data-scope="page">This page</button>
+        <button type="button" class="share-scope-btn" data-scope="workspace">Workspace</button>
+      </div>
+    </div>
+    <form id="share-gmail-form" class="share-form">
+      <div class="share-row">
+        <input id="share-email-input" type="text" class="text-input" placeholder="friend@gmail.com (comma-separated)" required />
+        <select id="share-perm-select" class="db-select" style="height:36px;">
+          <option value="Can view">Can view</option>
+          <option value="Can edit">Can edit</option>
+        </select>
+      </div>
+      <div id="share-local-warning" class="hidden" style="font-size:11.5px;color:var(--text-secondary);">
+        Running locally — paste your Render URL below so friends can open the link:
+        <input id="share-public-url-input" type="url" class="text-input" style="margin-top:4px;height:30px;font-size:12px;" placeholder="https://your-app.onrender.com" />
+      </div>
+      <input id="share-note-input" type="text" class="text-input" placeholder="Add a message (optional)..." />
+      <div class="share-actions-row">
+        <button id="share-copy-link-btn" type="button" class="btn-outline-sm">Copy link</button>
+        <button type="submit" class="btn-primary-sm">Share via Email</button>
+      </div>
+    </form>
+    <div id="share-invited-section" class="share-invited-section hidden">
+      <div class="share-invited-title">Recently shared with</div>
+      <div id="share-invited-list" class="share-invited-list"></div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
