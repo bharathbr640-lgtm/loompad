@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: notion-replica
+    name: loompad
     runtime: python
     plan: starter
     buildCommand: ""
